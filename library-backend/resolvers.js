@@ -34,6 +34,7 @@ const resolvers = {
     },
 
     me: (root, args, context) => {
+      console.log('CURRENT USER:', context.currentUser)
       return context.currentUser
     }
 
@@ -146,7 +147,7 @@ const resolvers = {
       const user = await User.findOne({ username: args.username })
 
       if (!user || args.password !== "secret") {
-        throw new GraphQLError("wrong credentials", {
+        throw new GraphQLError("Login failed: wrong credentials", {
           extensions: {
             code: "BAD_USER_INPUT"
           }

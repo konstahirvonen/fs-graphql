@@ -5,10 +5,12 @@ import { useState } from 'react'
 const Authors = (props) => {
   const [name, setName] = useState("")
   const [born, setBorn] = useState("")
-  const { data, loading } = useQuery(ALL_AUTHORS)
+  const { data, loading, error } = useQuery(ALL_AUTHORS)
   const [ setBornYear ] = useMutation(SET_YEAR, {
     refetchQueries: [{ query: ALL_AUTHORS }]
   })
+
+  const token = props.token
 
   if (!props.show) {
     return null
@@ -17,14 +19,22 @@ const Authors = (props) => {
     return <div>loading...</div>
   }
 
+  if (error) {
+    return <div>Error: {error.message}</div>
+  }
+
   const authors = data.allAuthors
 
-  const handleUpdate = (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault()
 
-    setBornYear({ variables: { name, born: Number(born) } })
-    setName("")
-    setBorn("")
+    try {
+      await setBornYear({ variables: { name, born: Number(born) } })
+      setName("")
+      setBorn("")
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   return (
@@ -46,32 +56,40 @@ const Authors = (props) => {
           ))}
         </tbody>
       </table>
-      <h2>Set birthyear</h2>
-      <form onSubmit={handleUpdate}>
+
+      {token && (
         <div>
-          name
-          <select
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          >
-            <option value="">Select author</option>
-            {authors.map(author => (
-              <option key={author.name} value={author.name}>
-                {author.name}
-              </option>
-            ))}
-          </select>
+          <h2>Set birthyear</h2>
+          <form onSubmit={handleUpdate}>
+            <div>
+              <label htmlFor="name">name</label>
+              <select
+                id="name"
+                name="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              >
+                <option value="">Select author</option>
+                {authors.map(author => (
+                  <option key={author.name} value={author.name}>
+                    {author.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="born">born</label>
+              <input
+                id="born"
+                type="number"
+                value={born}
+                onChange={(e) => setBorn(e.target.value)}
+              />
+            </div>
+            <button type="submit">update author</button>
+          </form>
         </div>
-        <div>
-          born
-          <input
-            type="number"
-            value={born}
-            onChange={(e) => setBorn(e.target.value)}
-          />
-        </div>
-        <button type="submit">update author</button>
-      </form>
+      )}
     </div>
   )
 }
